@@ -1,0 +1,20 @@
+NETWORK_NAME := go-mongodb
+MONGODB_CONTAINER_NAME := mongodb
+MONGODB_VERSION := 7.0
+MONGODB_PORT := 27017
+
+.PHONY: docker.create.network
+docker.create.network:
+	podman network create go-mongodb
+
+.PHONY: docker.build.app
+docker.build.app:
+	podman build -t app .
+
+.PHONY: docker.run.app
+docker.run.app:
+	podman run --rm -e MONGODB_HOST=$(MONGODB_CONTAINER_NAME) -e MONGODB_PORT=$(MONGODB_PORT) --network=$(NETWORK_NAME) --name go-app app
+
+.PHONY: docker.run.mongodb
+docker.run.mongodb:
+	podman run -p $(MONGODB_PORT):$(MONGODB_PORT) -d --network=$(NETWORK_NAME) --name $(MONGODB_CONTAINER_NAME) mongo:$(MONGODB_VERSION)
