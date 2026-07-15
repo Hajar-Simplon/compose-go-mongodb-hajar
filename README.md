@@ -6,8 +6,7 @@ This project demonstrates how to use **Docker Compose** to orchestrate a multi-c
 
 - A Go web application
 - A MongoDB database
-
-Docker Compose simplifies the development workflow by managing both containers with a single command while providing networking, persistent storage, restart policies and health checks.
+- An Nginx reverse proxy / load balancer
 
 ---
 
@@ -16,20 +15,21 @@ Docker Compose simplifies the development workflow by managing both containers w
 ```text
                 Browser
                     │
-                    ▼
          http://localhost:5000
                     │
                     ▼
-            Go Application
+      Nginx Reverse Proxy / Load Balancer
                     │
-     mongodb:27017 (Docker DNS)
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+     Go App      Go App      Go App
                     │
                     ▼
                 MongoDB
                     │
                     ▼
-            Docker Volume
-          (Persistent Storage)
+             Docker Volume
+         (Persistent Storage)
 ```
 
 ---
@@ -65,6 +65,9 @@ Docker Compose simplifies the development workflow by managing both containers w
 ├── handlers.go
 ├── main.go
 ├── Makefile
+├── nginx/
+│   ├── Dockerfile
+│   └── default.conf
 ├── secrets/
 │   └── mongodb_password.txt
 ├── .gitignore
