@@ -1,0 +1,100 @@
+services:
+
+  # ======================================================
+  # Go Web Application
+  # ======================================================
+  app:
+
+    # Build the Docker image from the Dockerfile
+    # located in the current directory.
+    build: .
+
+    # Automatically restart the container if it crashes.
+    # If the user manually stops it, Docker will not restart it.
+    restart: unless-stopped
+
+    # Publish the application to the host.
+    #
+    # Format:
+    # HOST_PORT:CONTAINER_PORT
+    #
+    # The Go application listens on port 8080 inside
+    # the container.
+    #
+    # It will be accessible from the host at:
+    # http://localhost:5000
+    ports:
+      - "5000:8080"
+
+    # Environment variables used by the Go application.
+    #
+    # The application builds the MongoDB connection string
+    # using these values.
+    #
+    # "mongodb" is the Docker Compose service name.
+    # Docker automatically resolves it to the MongoDB
+    # container's IP address through its internal DNS.
+    environment:
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: "27017"
+
+    # Start the MongoDB container before the application.
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+    # Watch the project directory.
+    # If a source file changes, Docker Compose
+    # rebuilds the image and restarts the container.
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+           
+  # ======================================================
+  # MongoDB Database
+  # ======================================================
+  mongodb:
+
+    # Official MongoDB image from Docker Hub.
+    image: mongo:8.0
+
+    # Restart automatically if the database crashes.
+    restart: unless-stopped
+
+    # Persist MongoDB data.
+    #
+    # MongoDB stores all database files in:
+    #
+    #     /data/db
+    #
+    # We mount a Docker named volume on that directory
+    # so that deleting the container does NOT delete
+    # the database.
+    volumes:
+      - mongodb-data:/data/db
+
+    # Verify MongoDB is accepting connections.
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# ======================================================
+# Docker Volumes
+# ======================================================
+#
+# Named volumes are managed by Docker.
+#
+# Unlike container storage, they survive:
+#
+#   docker compose down
+#
+# The volume is only removed if we execute:
+#
+#   docker compose down -v
+#
+volumes:
+  mongodb-data:
