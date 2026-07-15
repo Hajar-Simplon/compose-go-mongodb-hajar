@@ -46,6 +46,13 @@ services:
         - action: rebuild
           path: .
 
+    # Connect only to the backend network.
+    #
+    # The application cannot be reached
+    # directly from outside Docker.
+    networks:
+      - backend
+
   # ======================================================
   # Nginx Reverse Proxy / Load Balancer
   # ======================================================
@@ -68,6 +75,17 @@ services:
     # Start after the application container.
     depends_on:
       - app
+
+    # Nginx belongs to both networks.
+    #
+    # frontend:
+    #   Receives requests from users.
+    #
+    # backend:
+    #   Communicates with the Go application.
+    networks:
+      - frontend
+      - backend
 
   # ======================================================
   # MongoDB Database
@@ -111,6 +129,11 @@ services:
     secrets:
       - mongodb_password
 
+    # MongoDB is only reachable
+    # from the backend network.
+    networks:
+      - backend
+      
 # ======================================================
 # Docker Volumes
 # ======================================================
@@ -148,3 +171,25 @@ secrets:
   # The file itself is excluded from Git using .gitignore.
   mongodb_password:
     file: ./secrets/mongodb_password.txt
+
+# ======================================================
+# Docker Networks
+# ======================================================
+#
+# frontend:
+#   Public network.
+#   Only the reverse proxy (Nginx) is connected.
+#
+# backend:
+#   Private network.
+#   Used for communication between
+#   Nginx, the Go application and MongoDB.
+#
+# The Go application and MongoDB are
+# isolated from the outside world.
+#
+networks:
+
+  frontend:
+
+  backend:
