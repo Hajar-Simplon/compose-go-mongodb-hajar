@@ -67,7 +67,7 @@ services:
     # The browser communicates with Nginx,
     # which forwards requests to the Go application.
     ports:
-      - "5000:80"
+      - "5000:443"
 
     # Restart automatically if the container crashes.
     restart: unless-stopped
@@ -133,7 +133,7 @@ services:
     # from the backend network.
     networks:
       - backend
-      
+
 # ======================================================
 # Docker Volumes
 # ======================================================

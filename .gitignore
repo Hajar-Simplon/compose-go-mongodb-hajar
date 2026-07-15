@@ -44,3 +44,6 @@ secrets/
 # ===========================
 tmp/
 temp/
+
+# TLS certificates
+nginx/certs/

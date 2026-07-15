@@ -51,6 +51,8 @@ This project demonstrates how to use **Docker Compose** to orchestrate a multi-c
 - Horizontal scaling with Docker Compose
 - Dynamic DNS resolution for load balancing
 - Traffic distribution across multiple application replicas
+- Frontend / Backend network isolation
+- HTTPS support with TLS
 
 ---
 
@@ -67,7 +69,10 @@ This project demonstrates how to use **Docker Compose** to orchestrate a multi-c
 ├── Makefile
 ├── nginx/
 │   ├── Dockerfile
-│   └── default.conf
+│   ├── default.conf
+│   └── certs/
+│       ├── server.crt
+│       └── server.key
 ├── secrets/
 │   └── mongodb_password.txt
 ├── .gitignore
@@ -374,6 +379,51 @@ http://localhost:5000
 ```
 
 Requests should now be handled by all three replicas, confirming that load balancing is working correctly.
+
+---
+
+## Generate TLS Certificates
+
+Generate a self-signed certificate for development:
+
+```bash
+mkdir -p nginx/certs
+
+openssl req -x509 -nodes -days 365 \
+-newkey rsa:2048 \
+-keyout nginx/certs/server.key \
+-out nginx/certs/server.crt \
+-subj "/C=FR/ST=Occitanie/L=Toulouse/O=Simplon/CN=localhost"
+```
+
+---
+
+## Bonus Features
+
+### Frontend / Backend Network Isolation
+
+The infrastructure is divided into two Docker networks:
+
+- **Frontend:** only the Nginx reverse proxy.
+- **Backend:** Nginx, the Go application replicas and MongoDB.
+
+This isolates the backend services from direct external access while allowing Nginx to act as the gateway between users and the application.
+
+---
+
+### HTTPS Support
+
+The reverse proxy terminates TLS using a self-signed certificate generated with OpenSSL.
+
+Only Nginx is exposed through HTTPS.
+
+Application URL:
+
+```
+https://localhost:5000
+```
+
+A browser warning is expected because the certificate is self-signed and not issued by a trusted Certificate Authority.
 
 ---
 
