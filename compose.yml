@@ -82,6 +82,17 @@ services:
       retries: 5
       start_period: 20s
 
+    # Mount the Docker secret inside the container.
+    #
+    # Docker will make the secret available as a file:
+    #
+    #   /run/secrets/mongodb_password
+    #
+    # The secret is not baked into the image and is not
+    # stored inside the compose.yml file.
+    secrets:
+      - mongodb_password
+
 # ======================================================
 # Docker Volumes
 # ======================================================
@@ -98,3 +109,24 @@ services:
 #
 volumes:
   mongodb-data:
+
+# ======================================================
+# Docker Secrets
+# ======================================================
+#
+# Secrets are sensitive data managed by Docker.
+#
+# Unlike environment variables, they are mounted
+# inside the container as files under:
+#
+#   /run/secrets/
+#
+# This prevents passwords from being stored directly
+# inside the compose.yml file.
+#
+secrets:
+
+  # MongoDB password stored in a local file.
+  # The file itself is excluded from Git using .gitignore.
+  mongodb_password:
+    file: ./secrets/mongodb_password.txt

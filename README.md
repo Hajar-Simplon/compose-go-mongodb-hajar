@@ -46,6 +46,7 @@ Docker Compose simplifies the development workflow by managing both containers w
 - MongoDB health check
 - Go application starts only after MongoDB is healthy
 - Docker Compose Watch support for automatic rebuild during development
+- Docker Secrets for secure management of sensitive data
 
 ---
 
@@ -60,6 +61,9 @@ Docker Compose simplifies the development workflow by managing both containers w
 ├── handlers.go
 ├── main.go
 ├── Makefile
+├── secrets/
+│   └── mongodb_password.txt
+├── .gitignore
 └── README.md
 ```
 
@@ -206,6 +210,34 @@ Start watch mode:
 ```bash
 docker compose up --watch
 ```
+
+### Docker Secrets
+
+Docker Secrets provide a secure way to manage sensitive information such as passwords or API keys.
+
+Instead of storing sensitive values directly in the `compose.yml` file or committing them to Git, Docker mounts them inside the container as files located in:
+
+```
+/run/secrets/
+```
+
+In this project, a MongoDB password is stored as a Docker Secret.
+
+```yaml
+secrets:
+  mongodb_password:
+    file: ./secrets/mongodb_password.txt
+```
+
+The secret is mounted into the MongoDB container:
+
+```yaml
+mongodb:
+  secrets:
+    - mongodb_password
+```
+
+The secret file is excluded from version control using `.gitignore`.
 
 ---
 

@@ -30,7 +30,7 @@ docker-compose.override.yml
 .env.*
 
 # ===========================
-# Secrets (future)
+# Secrets 
 # ===========================
 secrets/
 
