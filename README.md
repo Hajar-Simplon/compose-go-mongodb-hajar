@@ -47,6 +47,10 @@ Docker Compose simplifies the development workflow by managing both containers w
 - Go application starts only after MongoDB is healthy
 - Docker Compose Watch support for automatic rebuild during development
 - Docker Secrets for secure management of sensitive data
+- Nginx reverse proxy
+- Horizontal scaling with Docker Compose
+- Dynamic DNS resolution for load balancing
+- Traffic distribution across multiple application replicas
 
 ---
 
@@ -211,6 +215,8 @@ Start watch mode:
 docker compose up --watch
 ```
 
+---
+
 ### Docker Secrets
 
 Docker Secrets provide a secure way to manage sensitive information such as passwords or API keys.
@@ -238,6 +244,133 @@ mongodb:
 ```
 
 The secret file is excluded from version control using `.gitignore`.
+
+---
+## Load Balancing & Scaling
+
+### Objective
+
+To improve the application's capacity, the Go service can be scaled horizontally by running multiple replicas.
+
+Instead of exposing the Go application directly, an Nginx reverse proxy becomes the single public entry point and distributes incoming requests between the application replicas.
+
+---
+
+### Updated Architecture
+
+```text
+                Browser
+                    │
+         http://localhost:5000
+                    │
+                    ▼
+        Nginx Reverse Proxy
+          │       │       │
+          ▼       ▼       ▼
+       Go App  Go App  Go App
+              │
+              ▼
+           MongoDB
+```
+
+---
+
+### Scaling the Application
+
+Start three replicas of the Go application:
+
+```bash
+docker compose up -d --scale app=3
+```
+
+Docker Compose automatically creates:
+
+- app-1
+- app-2
+- app-3
+
+---
+
+### Nginx Reverse Proxy
+
+The Go application is no longer exposed directly to the host.
+
+Instead of:
+
+```yaml
+ports:
+  - "5000:8080"
+```
+
+the application now uses:
+
+```yaml
+expose:
+  - "8080"
+```
+
+Only the Nginx service exposes a port:
+
+```yaml
+ports:
+  - "5000:80"
+```
+
+This makes Nginx the single entry point for all incoming requests.
+
+---
+
+### Dynamic DNS Resolution
+
+Initially, the Nginx configuration used:
+
+```nginx
+proxy_pass http://app:8080/;
+```
+
+Although Docker Compose successfully created three application replicas, all requests were forwarded to the same container.
+
+Investigation showed that Docker's embedded DNS correctly returned the IP addresses of all replicas, but Nginx resolved the hostname only once during startup and cached the first IP address.
+
+The solution was to configure Docker's embedded DNS resolver.
+
+```nginx
+resolver 127.0.0.11 valid=5s ipv6=off;
+
+location / {
+
+    set $backend http://app:8080;
+
+    proxy_pass $backend;
+
+}
+```
+
+This configuration forces Nginx to resolve the backend dynamically instead of permanently caching a single IP address, allowing requests to be distributed across all application replicas.
+
+---
+
+### Verification
+
+Scale the application:
+
+```bash
+docker compose up -d --scale app=3
+```
+
+Monitor the application logs:
+
+```bash
+docker compose logs -f app
+```
+
+Refresh:
+
+```
+http://localhost:5000
+```
+
+Requests should now be handled by all three replicas, confirming that load balancing is working correctly.
 
 ---
 

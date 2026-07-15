@@ -13,18 +13,13 @@ services:
     # If the user manually stops it, Docker will not restart it.
     restart: unless-stopped
 
-    # Publish the application to the host.
+    # Make port 8080 available only to
+    # other containers on the Docker network.
     #
-    # Format:
-    # HOST_PORT:CONTAINER_PORT
-    #
-    # The Go application listens on port 8080 inside
-    # the container.
-    #
-    # It will be accessible from the host at:
-    # http://localhost:5000
-    ports:
-      - "5000:8080"
+    # The application is NOT directly exposed
+    # to the host machine.
+    expose:
+      - "8080"
 
     # Environment variables used by the Go application.
     #
@@ -50,7 +45,30 @@ services:
       watch:
         - action: rebuild
           path: .
-           
+
+  # ======================================================
+  # Nginx Reverse Proxy / Load Balancer
+  # ======================================================
+  front:
+
+    # Build the custom Nginx image.
+    build:
+      context: ./nginx
+
+    # Only Nginx is exposed to the host.
+    #
+    # The browser communicates with Nginx,
+    # which forwards requests to the Go application.
+    ports:
+      - "5000:80"
+
+    # Restart automatically if the container crashes.
+    restart: unless-stopped
+
+    # Start after the application container.
+    depends_on:
+      - app
+
   # ======================================================
   # MongoDB Database
   # ======================================================
